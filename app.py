@@ -1,6 +1,7 @@
 import streamlit as st
 import pdfplumber
 import pandas as pd
+import re
 
 st.title("📄 AI Invoice Data Extractor")
 
@@ -10,19 +11,26 @@ if uploaded_file:
     with pdfplumber.open(uploaded_file) as pdf:
         text = ""
         for page in pdf.pages:
-            text += page.extract_text() + "\n"
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
 
-    # Dummy extraction logic (replace with regex/logic as needed)
+    # Default values
     invoice_number = "Not Found"
     date = "Not Found"
     total = "Not Found"
 
-    if "Invoice" in text:
-        invoice_number = text.split("Invoice")[1].split()[0]
-    if "Date" in text:
-        date = text.split("Date")[1].split()[0]
-    if "Total" in text:
-        total = text.split("Total")[1].split()[0]
+    # Regex-based search (more reliable than split)
+    invoice_match = re.search(r"(Invoice\s*#?:?\s*)(\w+)", text, re.IGNORECASE)
+    date_match = re.search(r"(Date\s*:?)(\s*\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", text, re.IGNORECASE)
+    total_match = re.search(r"(Total\s*:?)(\s*\$?\s*\d+[.,]?\d*)", text, re.IGNORECASE)
+
+    if invoice_match:
+        invoice_number = invoice_match.group(2).strip()
+    if date_match:
+        date = date_match.group(2).strip()
+    if total_match:
+        total = total_match.group(2).strip()
 
     df = pd.DataFrame([{"Invoice Number": invoice_number, "Date": date, "Total": total}])
     
