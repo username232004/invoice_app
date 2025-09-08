@@ -17,25 +17,24 @@ if uploaded_file:
 
     # Default values
     invoice_number = "Not Found"
-    date = "Not Found"
+    invoice_date = "Not Found"
     total = "Not Found"
 
     # Regex-based search (more reliable than split)
-    invoice_match = re.search(r"(Invoice\s*#?:?\s*)(\w+)", text, re.IGNORECASE)
-    date_match = re.search(r"(Date\s*:?)(\s*\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", text, re.IGNORECASE)
-    total_match = re.search(r"(Total\s*:?)(\s*\$?\s*\d+[.,]?\d*)", text, re.IGNORECASE)
+   
+    invoice_number_match = re.search(r"Invoice Number\s*(.+)", pdf_text)
+    invoice_date_match = re.search(r"Invoice Date\s*(.+)", pdf_text)
+    total_match = re.search(r"Total Due\s*\$(.+)", pdf_text)
+    
+    invoice_number = invoice_number_match.group(1).strip() if invoice_number_match else None
+    invoice_date = invoice_date_match.group(1).strip() if invoice_date_match else None
+    total = total_match.group(1).strip() if total_match else None
 
-    if invoice_match:
-        invoice_number = invoice_match.group(2).strip()
-    if date_match:
-        date = date_match.group(2).strip()
-    if total_match:
-        total = total_match.group(2).strip()
-
-    df = pd.DataFrame([{"Invoice Number": invoice_number, "Date": date, "Total": total}])
+    df = pd.DataFrame([{"Invoice Number": invoice_number, "Date": invoice_date, "Total": total}])
     
     st.subheader("Extracted Data")
     st.write(df)
 
     csv = df.to_csv(index=False).encode("utf-8")
     st.download_button("Download CSV", csv, "invoice_data.csv", "text/csv")
+
